@@ -33,3 +33,6 @@ Thumbs.db
 *.ntvs*
 *.njsproj
 *.sln
+
+# ─── INTERNAL PROJECT BRIEFS (NEVER SUBMIT) ─────────────────────────────────
+docs/SUPER_PROJECT_BRIEF.txt
