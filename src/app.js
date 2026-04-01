@@ -2,7 +2,7 @@ import express from "express";
 import helmet from "helmet";
 import { corsOptions } from "./config/cors.js";
 import { rateLimitOptions } from "./config/rateLimit.js";
-
+import { errorHandler, notFoundHandler } from "./middlewares/error.middleware.js";
 
 export const app = express();
 
@@ -16,3 +16,9 @@ app.use(corsOptions);
 app.use(rateLimitOptions);
 
 app.use(express.json({ limit: `10mb` }));
+
+app.use(notFoundHandler);
+
+app.use(errorHandler);
+
+
