@@ -10,6 +10,8 @@ import validateRoutes from "./routes/validate.routes.js";
 
 export const app = express();
 
+app.set('json spaces', 2);
+
 
 
 app.use(helmet());
