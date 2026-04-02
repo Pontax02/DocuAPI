@@ -4,25 +4,25 @@
 ![Express](https://img.shields.io/badge/Express-4.x-000000?logo=express&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
-API REST local para validación de documentos (imágenes y PDFs). Procesa archivos completamente en local, sin servicios externos, y devuelve un JSON estructurado con el resultado de la validación.
+A local REST API for document validation (images and PDFs). Files are processed entirely on-premise, with no external services, returning a structured JSON with the validation result.
 
 ---
 
 ## Features
 
-- Validación de tipo MIME real (`image/jpeg`, `image/png`, `application/pdf`)
-- Validación de tamaño mínimo y máximo configurable
-- Validación de resolución mínima (ancho y alto) con Sharp
-- Detección de imágenes en blanco o completamente negras (análisis de histograma)
-- Detección de archivos corruptos
-- Hash SHA-256 del archivo en cada respuesta
-- Limpieza automática de archivos temporales tras la validación
-- Seguridad: Helmet, CORS con whitelist, rate limiting
-- Arquitectura en capas: routes → controller → service → utils
+- Real MIME type validation (`image/jpeg`, `image/png`, `application/pdf`)
+- Configurable minimum and maximum file size validation
+- Minimum resolution validation (width and height) using Sharp
+- Blank or completely black image detection (histogram analysis)
+- Corrupted file detection
+- SHA-256 hash of the file included in every response
+- Automatic cleanup of temporary files after validation
+- Security: Helmet, CORS whitelist, rate limiting
+- Layered architecture: routes → controller → service → utils
 
 ---
 
-## Requisitos
+## Requirements
 
 - Node.js >= 18
 - npm
@@ -32,41 +32,41 @@ API REST local para validación de documentos (imágenes y PDFs). Procesa archiv
 ## Setup
 
 ```bash
-# 1. Clonar el repositorio
+# 1. Clone the repository
 git clone https://github.com/Pontax02/DocuAPI.git
 cd DocuAPI
 
-# 2. Instalar dependencias
+# 2. Install dependencies
 npm install
 
-# 3. Configurar variables de entorno
+# 3. Configure environment variables
 cp .env.example .env
-# Editar .env con tus valores
+# Edit .env with your values
 
-# 4. Crear carpeta de uploads (si no existe)
+# 4. Create uploads folder (if it does not exist)
 mkdir uploads
 
-# 5. Arrancar el servidor
+# 5. Start the server
 npm run dev
 ```
 
-El servidor arranca en `http://localhost:3000` por defecto.
+The server starts at `http://localhost:3000` by default.
 
 ---
 
-## Variables de entorno
+## Environment Variables
 
-| Variable | Default | Descripción |
+| Variable | Default | Description |
 |----------|---------|-------------|
-| `PORT` | `3000` | Puerto del servidor |
-| `NODE_ENV` | `development` | Entorno (`development` / `production`) |
-| `ALLOWED_ORIGINS` | `http://localhost:3000` | Orígenes CORS permitidos (separados por comas) |
-| `RATE_LIMIT_WINDOW_MS` | `900000` | Ventana de rate limiting en ms (15 min) |
-| `RATE_LIMIT_MAX` | `100` | Máximo de requests por ventana |
-| `MAX_FILE_SIZE_MB` | `5` | Tamaño máximo de archivo en MB |
-| `MIN_FILE_SIZE_KB` | `50` | Tamaño mínimo de archivo en KB |
-| `MIN_RESOLUTION_PX` | `600` | Resolución mínima en píxeles (ancho y alto) |
-| `UPLOAD_DIR` | `uploads` | Carpeta temporal para archivos subidos |
+| `PORT` | `3000` | Server port |
+| `NODE_ENV` | `development` | Environment (`development` / `production`) |
+| `ALLOWED_ORIGINS` | `http://localhost:3000` | Comma-separated list of allowed CORS origins |
+| `RATE_LIMIT_WINDOW_MS` | `900000` | Rate limit window in milliseconds (15 min) |
+| `RATE_LIMIT_MAX` | `100` | Maximum requests per window |
+| `MAX_FILE_SIZE_MB` | `5` | Maximum file size in MB |
+| `MIN_FILE_SIZE_KB` | `50` | Minimum file size in KB |
+| `MIN_RESOLUTION_PX` | `600` | Minimum image resolution in pixels (width and height) |
+| `UPLOAD_DIR` | `uploads` | Temporary folder for uploaded files |
 
 ---
 
@@ -74,18 +74,18 @@ El servidor arranca en `http://localhost:3000` por defecto.
 
 ### `POST /api/validate-document`
 
-Valida uno o dos documentos enviados como `multipart/form-data`.
+Validates one or two documents sent as `multipart/form-data`.
 
-**Campos:**
+**Fields:**
 
-| Campo | Tipo | Requerido | Descripción |
-|-------|------|-----------|-------------|
-| `file_1` | File | Sí | Documento principal |
-| `file_2` | File | No | Documento secundario |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `file_1` | File | Yes | Primary document |
+| `file_2` | File | No | Secondary document |
 
 ---
 
-**Respuesta exitosa (documento válido):**
+**Successful response (valid document):**
 
 ```json
 {
@@ -102,7 +102,7 @@ Valida uno o dos documentos enviados como `multipart/form-data`.
 }
 ```
 
-**Respuesta con errores de validación:**
+**Response with validation errors:**
 
 ```json
 {
@@ -119,7 +119,7 @@ Valida uno o dos documentos enviados como `multipart/form-data`.
 }
 ```
 
-**Sin archivo (`400`):**
+**Missing file (`400`):**
 
 ```json
 {
@@ -130,58 +130,58 @@ Valida uno o dos documentos enviados como `multipart/form-data`.
 
 ---
 
-## Códigos de error
+## Error Codes
 
-| Código | HTTP | Descripción |
-|--------|------|-------------|
-| `file_1_required` | 400 | No se envió el campo `file_1` |
-| `mime_not_allowed` | 200 | El tipo MIME no está permitido |
-| `file_too_small` | 200 | El archivo es menor que `MIN_FILE_SIZE_KB` |
-| `file_too_large` | 400 | El archivo supera `MAX_FILE_SIZE_MB` (Multer) |
-| `resolution_too_low` | 200 | Ancho o alto menor que `MIN_RESOLUTION_PX` |
-| `blank_or_black_image` | 200 | La imagen está completamente en blanco o negro |
-| `corrupted_file` | 200 | Sharp no pudo leer el archivo |
-| `route_not_found` | 404 | La ruta solicitada no existe |
-| `internal_server_error` | 500 | Error interno no controlado |
-
----
-
-## Seguridad
-
-- **Helmet** — cabeceras HTTP seguras (`X-Content-Type-Options`, `X-Frame-Options`, etc.)
-- **CORS** — solo los orígenes en `ALLOWED_ORIGINS` pueden llamar a la API
-- **Rate limiting** — máximo 100 requests cada 15 minutos por IP
-- **Límite de body** — máximo 10MB en el body JSON
-- **Validación de MIME** — doble validación: Multer + lógica propia
-- **Limpieza de archivos** — los archivos temporales se borran tras cada validación
+| Code | HTTP | Description |
+|------|------|-------------|
+| `file_1_required` | 400 | `file_1` field was not provided |
+| `mime_not_allowed` | 200 | MIME type is not in the allowed list |
+| `file_too_small` | 200 | File size is below `MIN_FILE_SIZE_KB` |
+| `file_too_large` | 400 | File exceeds `MAX_FILE_SIZE_MB` (Multer limit) |
+| `resolution_too_low` | 200 | Width or height is below `MIN_RESOLUTION_PX` |
+| `blank_or_black_image` | 200 | Image is entirely white or black |
+| `corrupted_file` | 200 | Sharp could not read the file |
+| `route_not_found` | 404 | The requested route does not exist |
+| `internal_server_error` | 500 | Unhandled internal server error |
 
 ---
 
-## Estructura del proyecto
+## Security
+
+- **Helmet** — secure HTTP headers (`X-Content-Type-Options`, `X-Frame-Options`, etc.)
+- **CORS** — only origins listed in `ALLOWED_ORIGINS` can call the API
+- **Rate limiting** — maximum 100 requests per 15 minutes per IP
+- **Body limit** — maximum 10MB JSON body
+- **MIME validation** — double check: Multer filter + custom service logic
+- **File cleanup** — temporary files are deleted after each validation
+
+---
+
+## Project Structure
 
 ```
 DocuAPI/
 ├── src/
-│   ├── app.js                      # Express: middlewares y rutas
-│   ├── server.js                   # Arranque del servidor
+│   ├── app.js                      # Express: middlewares and routes
+│   ├── server.js                   # Server startup
 │   ├── routes/
 │   │   └── validate.routes.js      # POST /api/validate-document
 │   ├── controllers/
-│   │   └── validate.controller.js  # Manejo de req/res
+│   │   └── validate.controller.js  # Request/response handling
 │   ├── services/
-│   │   └── validate.service.js     # Lógica de validación
+│   │   └── validate.service.js     # Validation logic
 │   ├── middlewares/
-│   │   ├── upload.middleware.js    # Multer: recepción de archivos
-│   │   └── error.middleware.js     # Manejador global de errores
+│   │   ├── upload.middleware.js    # Multer: file reception
+│   │   └── error.middleware.js     # Global error handler
 │   ├── utils/
 │   │   ├── hash.utils.js           # SHA-256
-│   │   ├── mime.utils.js           # Validación de MIME types
-│   │   └── image.utils.js          # Sharp: metadatos y validaciones
+│   │   ├── mime.utils.js           # MIME type validation
+│   │   └── image.utils.js          # Sharp: metadata and validations
 │   └── config/
-│       ├── env.js                  # Variables de entorno
-│       ├── cors.js                 # Configuración CORS
-│       └── rateLimit.js            # Configuración rate limit
-├── uploads/                        # Archivos temporales (gitignored)
+│       ├── env.js                  # Environment variables
+│       ├── cors.js                 # CORS configuration
+│       └── rateLimit.js            # Rate limit configuration
+├── uploads/                        # Temporary files (gitignored)
 ├── postman/
 │   └── DocuAPI.postman_collection.json
 ├── .env.example
@@ -191,30 +191,30 @@ DocuAPI/
 
 ---
 
-## Scripts npm
+## NPM Scripts
 
-| Script | Descripción |
+| Script | Description |
 |--------|-------------|
-| `npm start` | Servidor de producción |
-| `npm run dev` | Servidor con recarga automática |
+| `npm start` | Production server |
+| `npm run dev` | Server with auto-reload |
 
 ---
 
-## Ejemplo con curl
+## curl Examples
 
 ```bash
-# Validar una imagen
+# Validate a single image
 curl -X POST http://localhost:3000/api/validate-document \
-  -F "file_1=@/ruta/a/tu/imagen.jpg"
+  -F "file_1=@/path/to/image.jpg"
 
-# Validar dos documentos
+# Validate two documents
 curl -X POST http://localhost:3000/api/validate-document \
-  -F "file_1=@/ruta/documento1.jpg" \
-  -F "file_2=@/ruta/documento2.png"
+  -F "file_1=@/path/to/document1.jpg" \
+  -F "file_2=@/path/to/document2.png"
 ```
 
 ---
 
-## Licencia
+## License
 
 MIT © Pablo Pontanilla Moreira
