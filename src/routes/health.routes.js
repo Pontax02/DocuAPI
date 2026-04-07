@@ -4,7 +4,7 @@ const router = Router();
 
 
 router.get('/status', (req, res) => {
-  res.json({ statusOK: 'true' });
+  res.json({ status: 'OK' });
 });
 
 export default router;
