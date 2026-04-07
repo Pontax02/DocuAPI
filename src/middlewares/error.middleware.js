@@ -1,9 +1,7 @@
-
-
+import { logger } from '../config/logger.js';
 
 export const errorHandler = (err, req, res, next) => {
-  console.error(err);
-
+  logger.error(`${req.method} ${req.path} - ${err.message}`);
 
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(400).json({
@@ -12,7 +10,6 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
-
   res.status(500).json({
     valid: false,
     errors: ['internal_server_error'],
@@ -20,6 +17,7 @@ export const errorHandler = (err, req, res, next) => {
 };
 
 export const notFoundHandler = (req, res) => {
+  logger.warn(`${req.method} ${req.path} - route_not_found`);
   res.status(404).json({
     valid: false,
     errors: ['route_not_found'],
