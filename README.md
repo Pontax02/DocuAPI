@@ -15,8 +15,12 @@ A local REST API for document validation (images and PDFs). Files are processed 
 - Minimum resolution validation (width and height) using Sharp
 - Blank or completely black image detection (histogram analysis)
 - Corrupted file detection
-- SHA-256 hash of the file included in every response
-- Automatic cleanup of temporary files after validation
+- PDF validation: fake PDF detection, page count, PDF version
+- Support for two documents per request (`file_1` required, `file_2` optional)
+- SHA-256 hash of each file included in every response
+- Automatic cleanup of temporary files after validation (even on error)
+- Structured logging with Winston: console + file output (`logs/`)
+- Protected admin endpoint to read logs via API key
 - Security: Helmet, CORS whitelist, rate limiting
 - Layered architecture: routes → controller → service → utils
 
@@ -67,10 +71,52 @@ The server starts at `http://localhost:3000` by default.
 | `MIN_FILE_SIZE_KB` | `50` | Minimum file size in KB |
 | `MIN_RESOLUTION_PX` | `600` | Minimum image resolution in pixels (width and height) |
 | `UPLOAD_DIR` | `uploads` | Temporary folder for uploaded files |
+| `ADMIN_API_KEY` | — | Secret key for the admin logs endpoint |
 
 ---
 
 ## Endpoints
+
+### `GET /api/status`
+
+Returns API health status.
+
+```json
+{ "status": "OK" }
+```
+
+---
+
+### `GET /api/admin/logs`
+
+Returns the last N lines from the application log.
+
+**Headers:**
+
+| Header | Value |
+|--------|-------|
+| `x-api-key` | Your `ADMIN_API_KEY` value |
+
+**Query params:**
+
+| Param | Default | Description |
+|-------|---------|-------------|
+| `lines` | `100` | Number of log lines to return |
+
+**Response:**
+
+```json
+{
+  "total": 243,
+  "showing": 100,
+  "logs": [
+    "[2026-04-07 12:30:01] INFO: POST /validate-document - file_1: valid",
+    "[2026-04-07 12:30:10] ERROR: POST /validate-document - Sharp error"
+  ]
+}
+```
+
+---
 
 ### `POST /api/validate-document`
 
@@ -85,19 +131,51 @@ Validates one or two documents sent as `multipart/form-data`.
 
 ---
 
-**Successful response (valid document):**
+**Successful response — single file:**
 
 ```json
 {
-  "valid": true,
-  "errors": [],
-  "metadata": {
-    "mime": "image/jpeg",
-    "sizeKB": 450,
-    "hash": "46b3349ea995a715f0f8dd2c9b594622b0ade9b10a69b907d71cf59faf89c72f",
-    "width": 1920,
-    "height": 1080,
-    "format": "jpeg"
+  "file_1": {
+    "valid": true,
+    "errors": [],
+    "metadata": {
+      "mime": "image/jpeg",
+      "sizeKB": 450,
+      "hash": "46b3349ea995a715f0f8dd2c9b594622b0ade9b10a69b907d71cf59faf89c72f",
+      "width": 1920,
+      "height": 1080,
+      "format": "jpeg"
+    }
+  }
+}
+```
+
+**Successful response — two files:**
+
+```json
+{
+  "file_1": {
+    "valid": true,
+    "errors": [],
+    "metadata": {
+      "mime": "image/jpeg",
+      "sizeKB": 450,
+      "hash": "46b3349...",
+      "width": 1920,
+      "height": 1080,
+      "format": "jpeg"
+    }
+  },
+  "file_2": {
+    "valid": true,
+    "errors": [],
+    "metadata": {
+      "mime": "application/pdf",
+      "sizeKB": 1432,
+      "hash": "08cae9b...",
+      "pages": 3,
+      "pdfVersion": "1.7"
+    }
   }
 }
 ```
@@ -106,15 +184,17 @@ Validates one or two documents sent as `multipart/form-data`.
 
 ```json
 {
-  "valid": false,
-  "errors": ["resolution_too_low", "file_too_small"],
-  "metadata": {
-    "mime": "image/jpeg",
-    "sizeKB": 20,
-    "hash": "ab318d...",
-    "width": 300,
-    "height": 200,
-    "format": "jpeg"
+  "file_1": {
+    "valid": false,
+    "errors": ["resolution_too_low", "file_too_small"],
+    "metadata": {
+      "mime": "image/jpeg",
+      "sizeKB": 20,
+      "hash": "ab318d...",
+      "width": 300,
+      "height": 200,
+      "format": "jpeg"
+    }
   }
 }
 ```
@@ -140,8 +220,11 @@ Validates one or two documents sent as `multipart/form-data`.
 | `file_too_large` | 400 | File exceeds `MAX_FILE_SIZE_MB` (Multer limit) |
 | `resolution_too_low` | 200 | Width or height is below `MIN_RESOLUTION_PX` |
 | `blank_or_black_image` | 200 | Image is entirely white or black |
-| `corrupted_file` | 200 | Sharp could not read the file |
+| `corrupted_file` | 200 | File could not be parsed (image or PDF) |
+| `fake_pdf` | 200 | File does not have a valid PDF header |
+| `pdf_no_pages` | 200 | PDF was parsed but has no pages |
 | `route_not_found` | 404 | The requested route does not exist |
+| `unauthorized` | 401 | Missing or invalid `x-api-key` header |
 | `internal_server_error` | 500 | Unhandled internal server error |
 
 ---
@@ -165,25 +248,31 @@ DocuAPI/
 │   ├── app.js                      # Express: middlewares and routes
 │   ├── server.js                   # Server startup
 │   ├── routes/
-│   │   └── validate.routes.js      # POST /api/validate-document
+│   │   ├── validate.routes.js      # POST /api/validate-document
+│   │   ├── health.routes.js        # GET /api/status
+│   │   └── admin.routes.js         # GET /api/admin/logs
 │   ├── controllers/
 │   │   └── validate.controller.js  # Request/response handling
 │   ├── services/
 │   │   └── validate.service.js     # Validation logic
 │   ├── middlewares/
 │   │   ├── upload.middleware.js    # Multer: file reception
+│   │   ├── auth.middleware.js      # API key validation
 │   │   └── error.middleware.js     # Global error handler
 │   ├── utils/
 │   │   ├── hash.utils.js           # SHA-256
 │   │   ├── mime.utils.js           # MIME type validation
-│   │   └── image.utils.js          # Sharp: metadata and validations
+│   │   ├── image.utils.js          # Sharp: metadata and validations
+│   │   └── pdf.utils.js            # PDF validation
 │   └── config/
 │       ├── env.js                  # Environment variables
 │       ├── cors.js                 # CORS configuration
-│       └── rateLimit.js            # Rate limit configuration
+│       ├── rateLimit.js            # Rate limit configuration
+│       └── logger.js               # Winston logger
+├── logs/                           # Log files (gitignored)
 ├── uploads/                        # Temporary files (gitignored)
-├── postman/
-│   └── DocuAPI.postman_collection.json
+├── test/
+│   └── generate-fixtures.js        # Script to generate test files
 ├── .env.example
 ├── .gitignore
 └── package.json
