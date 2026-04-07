@@ -5,6 +5,7 @@ import { rateLimitOptions } from "./config/rateLimit.js";
 import { errorHandler, notFoundHandler } from "./middlewares/error.middleware.js";
 import validateRoutes from "./routes/validate.routes.js";
 import healthRouter from "./routes/health.routes.js";
+import adminRouter from "./routes/admin.routes.js";
 
 
 
@@ -20,7 +21,8 @@ app.use(rateLimitOptions);
 app.use(express.json({ limit: `10mb` }));
 
 app.use('/api', validateRoutes);
-app.use('/api', healthRouter)
+app.use('/api', healthRouter);
+app.use('/api/admin', adminRouter);
 
 app.use(notFoundHandler);
 
