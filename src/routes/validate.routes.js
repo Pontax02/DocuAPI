@@ -13,4 +13,10 @@ router.post(
   validateController
 );
 
+router.post('/status', (req, res) => {
+  res.json({ statusOK: 'true' });
+});
+
+
+
 export default router;
