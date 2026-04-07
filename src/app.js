@@ -4,7 +4,7 @@ import { corsOptions } from "./config/cors.js";
 import { rateLimitOptions } from "./config/rateLimit.js";
 import { errorHandler, notFoundHandler } from "./middlewares/error.middleware.js";
 import validateRoutes from "./routes/validate.routes.js";
-
+import healthRouter from "./routes/health.routes.js";
 
 
 
@@ -20,6 +20,7 @@ app.use(rateLimitOptions);
 app.use(express.json({ limit: `10mb` }));
 
 app.use('/api', validateRoutes);
+app.use('/api', healthRouter)
 
 app.use(notFoundHandler);
 
