@@ -16,4 +16,6 @@ export const env = {
   MIN_RESOLUTION_PX: Number(process.env.MIN_RESOLUTION_PX) || 600,
 
   UPLOAD_DIR: process.env.UPLOAD_DIR || 'uploads',
+
+  ADMIN_API_KEY: process.env.ADMIN_API_KEY || 'changeme',
 };
