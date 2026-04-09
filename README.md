@@ -23,6 +23,7 @@ A local REST API for document validation (images and PDFs). Files are processed 
 - Protected admin endpoint to read logs via API key
 - Security: Helmet, CORS whitelist, rate limiting
 - Layered architecture: routes → controller → service → utils
+- Swagger UI available at `/docs` (OpenAPI 3.0)
 
 ---
 
@@ -84,6 +85,14 @@ Returns API health status.
 ```json
 { "status": "OK" }
 ```
+
+---
+
+### `GET /docs`
+
+Interactive Swagger UI. Explore and test all endpoints directly from the browser.
+
+> No authentication required to access the docs UI.
 
 ---
 
@@ -268,15 +277,35 @@ DocuAPI/
 │       ├── env.js                  # Environment variables
 │       ├── cors.js                 # CORS configuration
 │       ├── rateLimit.js            # Rate limit configuration
-│       └── logger.js               # Winston logger
+│       ├── logger.js               # Winston logger
+│       └── swagger.js              # OpenAPI 3.0 document
 ├── logs/                           # Log files (gitignored)
 ├── uploads/                        # Temporary files (gitignored)
 ├── test/
-│   └── generate-fixtures.js        # Script to generate test files
+│   ├── fixtures/                   # Test files (jpg, pdf, corrupted, blank…)
+│   ├── utils.test.js               # Unit tests: hash, mime, image utils
+│   └── validate.test.js            # Integration tests: POST /api/validate-document
 ├── .env.example
 ├── .gitignore
 └── package.json
 ```
+
+---
+
+## Testing
+
+The project includes unit and integration tests using Jest.
+
+```bash
+npm test
+```
+
+| File | Coverage |
+|------|----------|
+| `test/utils.test.js` | `hash.utils`, `mime.utils`, `image.utils` |
+| `test/validate.test.js` | `POST /api/validate-document` (valid, invalid, PDF, corrupted…) |
+
+Test fixtures are located in `test/fixtures/` and cover: valid JPEG, small file, low resolution, blank image, corrupted file, valid PDF, and fake PDF.
 
 ---
 
@@ -285,7 +314,9 @@ DocuAPI/
 | Script | Description |
 |--------|-------------|
 | `npm start` | Production server |
-| `npm run dev` | Server with auto-reload |
+| `npm run dev` | Server with auto-reload (Node.js `--watch`) |
+| `npm run devStart` | Server with auto-reload (nodemon) |
+| `npm test` | Run Jest test suite |
 
 ---
 
