@@ -4,6 +4,8 @@ import { isMimeAllowed } from '../utils/mime.utils.js';
 import { getFileHash } from '../utils/hash.utils.js';
 import { validateImage } from '../utils/image.utils.js';
 import { validatePdf } from '../utils/pdf.utils.js';
+import { extractText } from '../utils/ocr.utils.js';
+import { isDni, parseDniFields } from '../utils/dni.utils.js';
 
 export const validateFirstDocument = async (file_1) => {
   const errors = [];
@@ -23,6 +25,15 @@ export const validateFirstDocument = async (file_1) => {
       const result = await validateImage(file_1.path, env.MIN_RESOLUTION_PX);
       errors.push(...result.errors);
       imageMetadata = result.metadata;
+
+      const text = await extractText(file_1.path);
+      if (!text) {
+        errors.push("ocr_no_text_detected");
+      } else if (!isDni(text)) {
+        errors.push("ocr_not_a_dni");
+      }
+      const dni = text ? parseDniFields(text) : null;
+      imageMetadata = { ...imageMetadata, dni };
     } else if (file_1.mimetype === "application/pdf") {
       const result = await validatePdf(file_1.path);
       errors.push(...result.errors);
