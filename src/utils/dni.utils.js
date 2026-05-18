@@ -33,6 +33,20 @@ export const parseDniFields = (text) => {
   const last3 = nameWords.slice(-3);
   const surname = last3.slice(0, 2).join(' ') || null;
   const name = last3[2] ?? null;
+  const calculateAge = (birthDateStr) => {
+  const [day, month, year] = birthDateStr.split('/').map(Number);
+  const birthDate = new Date(year, month - 1, day);
+  const today = new Date();
 
-  return { name, surname, birthDate, gender };
+  let age = today.getFullYear() - birthDate.getFullYear();
+
+  if (today.getMonth() < birthDate.getMonth() ||
+     (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+
+  return age;
+};
+    const age = birthDate ? calculateAge(birthDate) : null; // check real time age
+  return { name, surname, birthDate, gender, age };
 };
