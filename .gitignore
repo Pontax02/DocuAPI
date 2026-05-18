@@ -9,6 +9,9 @@ node_modules/
 # ─── Uploads (archivos temporales subidos a la API) ───────────────────────────
 uploads/
 
+# ─── Tesseract language model files (downloaded at runtime) ──────────────────
+*.traineddata
+
 # ─── Logs ─────────────────────────────────────────────────────────────────────
 logs/
 *.log
