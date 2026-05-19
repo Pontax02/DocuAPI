@@ -5,6 +5,21 @@ const NAME_BLOCKLIST = new Set([
   'IDENTIDADE', 'IDENTITAT', 'CARD', 'NATIONAL', 'IDENTITY',
 ]);
 
+const calculateAge = (birthDateStr) => {
+  const [day, month, year] = birthDateStr.split('/').map(Number);
+  const date = new Date(year, month - 1, day);
+  const today = new Date();
+
+  let age = today.getFullYear() - date.getFullYear();
+
+  if (today.getMonth() < date.getMonth() ||
+     (today.getMonth() === date.getMonth() && today.getDate() < date.getDate())) {
+    age--;
+  }
+
+  return age;
+};
+
 export const isDni = (text) => {
   const upper = text.toUpperCase();
   return DNI_KEYWORDS.some((keyword) => upper.includes(keyword));
@@ -33,20 +48,7 @@ export const parseDniFields = (text) => {
   const last3 = nameWords.slice(-3);
   const surname = last3.slice(0, 2).join(' ') || null;
   const name = last3[2] ?? null;
-  const calculateAge = (birthDateStr) => {
-  const [day, month, year] = birthDateStr.split('/').map(Number);
-  const birthDate = new Date(year, month - 1, day);
-  const today = new Date();
 
-  let age = today.getFullYear() - birthDate.getFullYear();
-
-  if (today.getMonth() < birthDate.getMonth() ||
-     (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-
-  return age;
-};
-    const age = birthDate ? calculateAge(birthDate) : null; // check real time age
+  const age = birthDate ? calculateAge(birthDate) : null;
   return { name, surname, birthDate, gender, age };
 };
