@@ -33,7 +33,7 @@ export const validateFirstDocument = async (file_1) => {
         errors.push("ocr_not_a_dni");
       }
       const dni = text ? parseDniFields(text) : null;
-      imageMetadata = { ...imageMetadata, dni };
+      imageMetadata = { ...imageMetadata, ocrRawText: text || null, dni };
     } else if (file_1.mimetype === "application/pdf") {
       const result = await validatePdf(file_1.path);
       errors.push(...result.errors);
