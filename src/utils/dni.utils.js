@@ -52,3 +52,7 @@ export const parseDniFields = (text) => {
   const age = birthDate ? calculateAge(birthDate) : null;
   return { name, surname, birthDate, gender, age };
 };
+
+export const getAgeFromDni = () => {
+  return parseDniFields.age;
+};
