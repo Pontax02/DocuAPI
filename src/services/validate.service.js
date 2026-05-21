@@ -99,3 +99,21 @@ export const validateSecondDocument = async (file_2) => {
     },
   };
 };
+
+
+
+export const validateAge = async (age) => {
+  const errors = [];
+  const calculatedAge = getAgeFromDni();
+  if (age != calculatedAge) {
+    errors.push("age_mismatch"); {
+    
+  } 
+
+}
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+};
+
