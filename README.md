@@ -24,6 +24,9 @@ A local REST API for document validation (images and PDFs). Files are processed 
 - Security: Helmet, CORS whitelist, rate limiting
 - Layered architecture: routes → controller → service → utils
 - Swagger UI available at `/docs` (OpenAPI 3.0)
+- OCR text extraction from images using Tesseract.js (English + Spanish)
+- Spanish DNI detection and structured field parsing (name, surname, birth date, gender, age)
+- Optional `birthDate` body field to cross-validate against the DNI's extracted birth date
 
 ---
 
@@ -135,12 +138,13 @@ Validates one or two documents sent as `multipart/form-data`.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `file_1` | File | Yes | Primary document |
+| `file_1` | File | Yes | Primary document (image or PDF) |
 | `file_2` | File | No | Secondary document |
+| `birthDate` | String | No | Expected birth date in `DD/MM/YYYY` format — validated against the OCR-extracted DNI value |
 
 ---
 
-**Successful response — single file:**
+**Successful response — single file (DNI image):**
 
 ```json
 {
@@ -153,7 +157,15 @@ Validates one or two documents sent as `multipart/form-data`.
       "hash": "46b3349ea995a715f0f8dd2c9b594622b0ade9b10a69b907d71cf59faf89c72f",
       "width": 1920,
       "height": 1080,
-      "format": "jpeg"
+      "format": "jpeg",
+      "ocrRawText": "REINO DE ESPANA\nDOCUMENTO NACIONAL DE IDENTIDAD\n...",
+      "dni": {
+        "name": "PABLO",
+        "surname": "PONTANILLA MOREIRA",
+        "birthDate": "04/04/2006",
+        "gender": "M",
+        "age": 20
+      }
     }
   }
 }
@@ -232,6 +244,9 @@ Validates one or two documents sent as `multipart/form-data`.
 | `corrupted_file` | 200 | File could not be parsed (image or PDF) |
 | `fake_pdf` | 200 | File does not have a valid PDF header |
 | `pdf_no_pages` | 200 | PDF was parsed but has no pages |
+| `ocr_no_text_detected` | 200 | OCR ran but extracted no text from the image |
+| `ocr_not_a_dni` | 200 | Extracted text does not contain DNI document markers |
+| `birthDate_mismatch` | 200 | `birthDate` body field does not match the DNI's extracted birth date |
 | `route_not_found` | 404 | The requested route does not exist |
 | `unauthorized` | 401 | Missing or invalid `x-api-key` header |
 | `internal_server_error` | 500 | Unhandled internal server error |
@@ -272,7 +287,9 @@ DocuAPI/
 │   │   ├── hash.utils.js           # SHA-256
 │   │   ├── mime.utils.js           # MIME type validation
 │   │   ├── image.utils.js          # Sharp: metadata and validations
-│   │   └── pdf.utils.js            # PDF validation
+│   │   ├── pdf.utils.js            # PDF validation
+│   │   ├── ocr.utils.js            # Tesseract.js: text extraction (eng+spa)
+│   │   └── dni.utils.js            # Spanish DNI detection and field parsing
 │   └── config/
 │       ├── env.js                  # Environment variables
 │       ├── cors.js                 # CORS configuration
@@ -326,6 +343,11 @@ Test fixtures are located in `test/fixtures/` and cover: valid JPEG, small file,
 # Validate a single image
 curl -X POST http://localhost:3000/api/validate-document \
   -F "file_1=@/path/to/image.jpg"
+
+# Validate a DNI image with birth date cross-check
+curl -X POST http://localhost:3000/api/validate-document \
+  -F "file_1=@/path/to/dni.jpg" \
+  -F "birthDate=04/04/2006"
 
 # Validate two documents
 curl -X POST http://localhost:3000/api/validate-document \
