@@ -5,7 +5,7 @@ export const validateController = async (req, res, next) => {
   try {
     const file_1 = req.files?.file_1?.[0];
     const file_2 = req.files?.file_2?.[0];
-    const age = req.body.age;
+    const birthDate = req.body.birthDate;
 
     if (!file_1) {
       logger.warn(`${req.method} ${req.path} - file_1_required`);
@@ -18,9 +18,9 @@ export const validateController = async (req, res, next) => {
     const result = await validateFirstDocument(file_1);
     const remaining = req.rateLimit?.remaining ?? null;
 
-    if (age && result.metadata.dni?.age !== Number(age)) {
+    if (birthDate && result.metadata.dni?.birthDate !== birthDate) {
       result.valid = false;
-      result.errors.push('age_mismatch');
+      result.errors.push('birthDate_mismatch');
     }
 
     if (file_2) {
