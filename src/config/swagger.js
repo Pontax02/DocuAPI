@@ -56,6 +56,11 @@ export const swaggerDocument = {
                     format: 'binary',
                     description: 'Secondary document (optional). JPEG, PNG or PDF.',
                   },
+                  birthDate: {
+                    type: 'string',
+                    description: 'Expected birth date in DD/MM/YYYY format. If provided, it is cross-validated against the birth date extracted from the DNI via OCR.',
+                    example: '04/04/2006',
+                  },
                 },
               },
             },
@@ -67,8 +72,8 @@ export const swaggerDocument = {
             content: {
               'application/json': {
                 examples: {
-                  valid_image: {
-                    summary: 'Valid image',
+                  valid_dni: {
+                    summary: 'Valid Spanish DNI image',
                     value: {
                       file_1: {
                         valid: true,
@@ -80,12 +85,64 @@ export const swaggerDocument = {
                           width: 1920,
                           height: 1080,
                           format: 'jpeg',
+                          ocrRawText: 'REINO DE ESPANA\nDOCUMENTO NACIONAL DE IDENTIDAD\n...',
+                          dni: {
+                            name: 'PABLO',
+                            surname: 'PONTANILLA MOREIRA',
+                            birthDate: '04/04/2006',
+                            gender: 'M',
+                            age: 20,
+                          },
+                        },
+                      },
+                    },
+                  },
+                  birthdate_mismatch: {
+                    summary: 'Birth date mismatch',
+                    value: {
+                      file_1: {
+                        valid: false,
+                        errors: ['birthDate_mismatch'],
+                        metadata: {
+                          mime: 'image/jpeg',
+                          sizeKB: 450,
+                          hash: '46b3349e...',
+                          width: 1920,
+                          height: 1080,
+                          format: 'jpeg',
+                          ocrRawText: 'REINO DE ESPANA\nDOCUMENTO NACIONAL DE IDENTIDAD\n...',
+                          dni: {
+                            name: 'PABLO',
+                            surname: 'PONTANILLA MOREIRA',
+                            birthDate: '04/04/2006',
+                            gender: 'M',
+                            age: 20,
+                          },
+                        },
+                      },
+                    },
+                  },
+                  ocr_not_a_dni: {
+                    summary: 'Image is not a DNI',
+                    value: {
+                      file_1: {
+                        valid: false,
+                        errors: ['ocr_not_a_dni'],
+                        metadata: {
+                          mime: 'image/jpeg',
+                          sizeKB: 312,
+                          hash: 'c9f2a1...',
+                          width: 1200,
+                          height: 800,
+                          format: 'jpeg',
+                          ocrRawText: 'some other text',
+                          dni: null,
                         },
                       },
                     },
                   },
                   invalid_image: {
-                    summary: 'Invalid image',
+                    summary: 'Invalid image (resolution / size)',
                     value: {
                       file_1: {
                         valid: false,
