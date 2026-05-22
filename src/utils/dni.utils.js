@@ -20,6 +20,11 @@ const calculateAge = (birthDateStr) => {
   return age;
 };
 
+export const normalize = (str) => {
+  if (str == null) return null;
+  return str.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().trim();
+};
+
 export const isDni = (text) => {
   const upper = text.toUpperCase();
   return DNI_KEYWORDS.some((keyword) => upper.includes(keyword));
