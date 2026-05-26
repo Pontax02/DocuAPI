@@ -7,10 +7,7 @@ export const validateController = async (req, res, next) => {
   try {
     const file_1 = req.files?.file_1?.[0];
     const file_2 = req.files?.file_2?.[0];
-    const birthDate = req.body.birthDate;
-    const name = req.body.name;
-    const surname = req.body.surname;
-    const gender = req.body.gender;
+    const { birthDate, name, surname, gender } = req.body;
 
 
     if (!file_1) {
@@ -24,28 +21,21 @@ export const validateController = async (req, res, next) => {
     const result = await validateFirstDocument(file_1);
     const remaining = req.rateLimit?.remaining ?? null;
 
-    if (birthDate && result.metadata.dni?.birthDate !== birthDate) {
-      result.valid = false;
-      result.errors.push('birthDate_mismatch');
-    }
-    if (normalize(name) && normalize(result.metadata.dni?.name) !== normalize(name)) {
-      result.valid = false;
-      result.errors.push('name_mismatch');
-    }
-    if (normalize(surname) && normalize(result.metadata.dni?.surname) !== normalize(surname)) {
-      result.valid = false;
-      result.errors.push('surname_mismatch');
-    } 
-    if (normalize(gender) && normalize(result.metadata.dni?.gender) !== normalize(gender)) {
-      result.valid = false;
-      result.errors.push('gender_mismatch');
-    }
+    const dni = result.metadata.dni;
+    const nName     = normalize(name);
+    const nSurname  = normalize(surname);
+    const nGender   = normalize(gender);
+
+    if (birthDate && dni?.birthDate !== birthDate)          { result.valid = false; result.errors.push('birthDate_mismatch'); }
+    if (nName    && normalize(dni?.name)    !== nName)      { result.valid = false; result.errors.push('name_mismatch'); }
+    if (nSurname && normalize(dni?.surname) !== nSurname)   { result.valid = false; result.errors.push('surname_mismatch'); }
+    if (nGender  && normalize(dni?.gender)  !== nGender)    { result.valid = false; result.errors.push('gender_mismatch'); }
 
     const matches = {
-      ...(name      ? { nameMatch:      normalize(result.metadata.dni?.name)    === normalize(name) }      : {}),
-      ...(surname   ? { surnameMatch:   normalize(result.metadata.dni?.surname) === normalize(surname) }   : {}),
-      ...(gender    ? { genderMatch:    normalize(result.metadata.dni?.gender)  === normalize(gender) }    : {}),
-      ...(birthDate ? { birthDateMatch: result.metadata.dni?.birthDate          === birthDate }            : {}),
+      ...(nName     ? { nameMatch:      normalize(dni?.name)    === nName }      : {}),
+      ...(nSurname  ? { surnameMatch:   normalize(dni?.surname) === nSurname }   : {}),
+      ...(nGender   ? { genderMatch:    normalize(dni?.gender)  === nGender }    : {}),
+      ...(birthDate ? { birthDateMatch: dni?.birthDate          === birthDate }   : {}),
     };
 
     if (file_2) {
@@ -53,11 +43,11 @@ export const validateController = async (req, res, next) => {
       logger.info(
         `${req.method} ${req.path} - file_1: ${result.valid ? 'valid' : 'invalid'} | file_2: ${result2.valid ? 'valid' : 'invalid'}`
       );
-      return res.status(200).json({ file_1: result, file_2: result2, matches, remaining_requests: remaining });
+      return res.status(200).json({ file_1: result, file_2: result2, ...(Object.keys(matches).length ? { matches } : {}), remaining_requests: remaining });
     }
 
     logger.info(`${req.method} ${req.path} - file_1: ${result.valid ? 'valid' : 'invalid'}`);
-    return res.status(200).json({ file_1: result, matches, remaining_requests: remaining });
+    return res.status(200).json({ file_1: result, ...(Object.keys(matches).length ? { matches } : {}), remaining_requests: remaining });
 
   } catch (err) {
     next(err);
