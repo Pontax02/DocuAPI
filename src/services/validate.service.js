@@ -26,14 +26,16 @@ export const validateFirstDocument = async (file_1) => {
       errors.push(...result.errors);
       imageMetadata = result.metadata;
 
-      const text = await extractText(file_1.path);
-      if (!text) {
-        errors.push("ocr_no_text_detected");
-      } else if (!isDni(text)) {
-        errors.push("ocr_not_a_dni");
+      if (imageMetadata) {
+        const text = await extractText(file_1.path);
+        if (!text) {
+          errors.push("ocr_no_text_detected");
+        } else if (!isDni(text)) {
+          errors.push("ocr_not_a_dni");
+        }
+        const dni = text ? parseDniFields(text) : null;
+        imageMetadata = { ...imageMetadata, ocrRawText: text || null, dni };
       }
-      const dni = text ? parseDniFields(text) : null;
-      imageMetadata = { ...imageMetadata, ocrRawText: text || null, dni };
     } else if (file_1.mimetype === "application/pdf") {
       const result = await validatePdf(file_1.path);
       errors.push(...result.errors);
