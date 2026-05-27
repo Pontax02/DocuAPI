@@ -1,6 +1,11 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect, jest } from '@jest/globals';
 import request from 'supertest';
-import { app } from '../src/app.js';
+
+jest.unstable_mockModule('../src/utils/ocr.utils.js', () => ({
+  extractText: jest.fn().mockResolvedValue('DOCUMENTO NACIONAL DE IDENTIDAD'),
+}));
+
+const { app } = await import('../src/app.js');
 import path from 'path';
 import { fileURLToPath } from 'url';
 
